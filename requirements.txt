@@ -1,0 +1,7 @@
+torch
+diffusers
+transformers
+accelerate
+safetensors
+peft
+compel
