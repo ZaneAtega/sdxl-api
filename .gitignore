@@ -1,4 +1,5 @@
 models
 prompts.py
-tests
+outputs/*
+!outputs/*.py
 __pycache__
