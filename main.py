@@ -3,13 +3,15 @@ from io import BytesIO
 import random
 
 import torch
-from diffusers import StableDiffusionXLPipeline
-from schedulers import SCHEDULERS
 from compel import Compel, ReturnedEmbeddingsType
+from diffusers import StableDiffusionXLPipeline
+from diffusers.callbacks import SDXLCFGCutoffCallback
 
 import uvicorn
 from fastapi import FastAPI
 from fastapi.responses import Response
+
+from schedulers import SCHEDULERS
 
 MODEL = "models/" + (
     "waiIllustriousSDXL_v170",
@@ -43,44 +45,52 @@ NEGATIVE_PROMPT = ""
 
 class ImageGenerator:
     def __init__(self):
-        self.pipeline = self._load_pipeline()
+        self.pipe = self._load_pipeline()
         self.loaded_loras = {}
 
         self.compel = Compel(
-            tokenizer=[self.pipeline.tokenizer, self.pipeline.tokenizer_2],
-            text_encoder=[self.pipeline.text_encoder, self.pipeline.text_encoder_2],
+            tokenizer=[self.pipe.tokenizer, self.pipe.tokenizer_2],
+            text_encoder=[self.pipe.text_encoder, self.pipe.text_encoder_2],
             truncate_long_prompts=False,
             returned_embeddings_type=ReturnedEmbeddingsType.PENULTIMATE_HIDDEN_STATES_NON_NORMALIZED,
             requires_pooled=[False, True]
         )
         self.empty_embeds, _ = self.compel("")
+        self.negative_cache = {}
+
+        self.callback = SDXLCFGCutoffCallback(cutoff_step_ratio=0.4)
 
     def _load_pipeline(self):
-        pipeline = StableDiffusionXLPipeline.from_single_file(
+        pipe = StableDiffusionXLPipeline.from_single_file(
             MODEL,
             torch_dtype=torch.float16
         ).to("cuda")
 
-        pipeline.vae.enable_slicing()
-        pipeline.vae.enable_tiling()
+        pipe.fuse_qkv_projections()
 
-        self.scheduler_config = pipeline.scheduler.config
+        pipe.unet.to(memory_format=torch.channels_last)
+        pipe.vae.to(memory_format=torch.channels_last)
 
-        return pipeline
+        pipe.vae.enable_slicing()
+        pipe.vae.enable_tiling()
+
+        self.scheduler_config = pipe.scheduler.config
+
+        return pipe
 
     def set_scheduler(self, name):
         scheduler, config = SCHEDULERS[name]
-        self.pipeline.scheduler = scheduler.from_config(self.scheduler_config, **config)
+        self.pipe.scheduler = scheduler.from_config(self.scheduler_config, **config)
 
     def _update_lora(self, name, loaded_name, adapter_name):
         if name == loaded_name:
             return loaded_name
 
         if loaded_name:
-            self.pipeline.delete_adapters(adapter_name)
+            self.pipe.delete_adapters(adapter_name)
 
         if name:
-            self.pipeline.load_lora_weights("models/loras", weight_name=f"{name}.safetensors", adapter_name=adapter_name)
+            self.pipe.load_lora_weights("models/loras", weight_name=f"{name}.safetensors", adapter_name=adapter_name)
 
         return name
 
@@ -93,13 +103,17 @@ class ImageGenerator:
         adapters = [adapter for adapter in ADAPTER_NAMES if body.get(adapter)]
 
         if adapters:
-            self.pipeline.set_adapters(adapters, adapter_weights=[body.get(f"{adapter}_weight", 1.0) for adapter in adapters])
+            self.pipe.set_adapters(adapters, adapter_weights=[body.get(f"{adapter}_weight", 1.0) for adapter in adapters])
         else:
-            self.pipeline.disable_lora()
+            self.pipe.disable_lora()
 
     def generate_image(self, prompt, size, steps, cfg, negative_prompt, seed):
         prompt_embeds, pooled = self.compel(prompt)
-        negative_embeds, negative_pooled = self.compel(negative_prompt)
+
+        if negative_prompt not in self.negative_cache:
+            self.negative_cache[negative_prompt] = self.compel(negative_prompt)
+
+        negative_embeds, negative_pooled = self.negative_cache[negative_prompt]
 
         prompt_embeds, negative_embeds = self.compel.pad_conditioning_tensors_to_same_length(
             [prompt_embeds, negative_embeds],
@@ -108,7 +122,7 @@ class ImageGenerator:
 
         image = BytesIO()
 
-        self.pipeline(
+        self.pipe(
             height=size[0],
             width=size[1],
 
@@ -125,7 +139,9 @@ class ImageGenerator:
             generator=torch.Generator("cuda").manual_seed(seed) if seed is not None else None,
 
             original_size=size,
-            target_size=size
+            target_size=size,
+
+            callback_on_step_end=self.callback
         ).images[0].save(image, format="PNG")
 
         return image.getvalue()
