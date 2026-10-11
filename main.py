@@ -11,6 +11,7 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.responses import Response
 
+from prompts import PROMPT_PREFIX, NEGATIVE_PROMPT
 from schedulers import SCHEDULERS
 
 MODEL = "models/" + (
@@ -25,23 +26,12 @@ ADAPTER_NAMES = ("style", "character")
 SIZES = (
     (1024, 1024),
 
-    (1128, 1024),
-    (1352, 1024),
-    (1368, 1024),
-    (1392, 1024),
-    (1496, 1024),
-    (1820, 1024),
-    (2196, 1024),
-    (2208, 1024),
+    *((height, 1024) for height in (1128, 1352, 1368, 1392, 1496, 1820, 2196, 2208)),
+    # *((1024, width) for width in (928, 776, 768, 752, 704, 576, 480, 472)),
 
-    (1024, 1368),
-    (1024, 1392),
-    (1024, 1432),
-    (1024, 1792),
-    (1024, 1820)
+    *((1024, width) for width in (1368, 1392, 1432, 1792, 1820))
+    # *((height, 1024) for height in (768, 752, 736, 584, 576))
 )
-
-NEGATIVE_PROMPT = ""
 
 class ImageGenerator:
     def __init__(self):
@@ -161,7 +151,7 @@ async def generate(body: dict):
     generator.apply_loras(body)
 
     return Response(generator.generate_image(
-        prompt=body["prompt"],
+        prompt=f"{PROMPT_PREFIX}{body['prompt']}",
         size=tuple(body["size"]) if body.get("size") else random.choice(SIZES),
         steps=body.get("steps", 28), # 12 20 28
         cfg=body.get("cfg", 5.0), # 4–7
