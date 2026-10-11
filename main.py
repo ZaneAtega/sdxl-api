@@ -24,13 +24,15 @@ MODEL = "models/" + (
 ADAPTER_NAMES = ("style", "character")
 
 SIZES = (
-    (1024, 1024),
+    (1272, 1272), # 1024 1240
 
-    *((height, 1024) for height in (1128, 1352, 1368, 1392, 1496, 1820, 2196, 2208)),
-    # *((1024, width) for width in (928, 776, 768, 752, 704, 576, 480, 472)),
+    *((height, 1024) for height in (1128, 1368, 1496, 1816, 2208)),
+    # *((1024, width) for width in (928, 768, 704, 576, 472)),
+    # (832, 1024), (896, 1024), (912, 1024), (1024, 952), (1024, 832),
 
-    *((1024, width) for width in (1368, 1392, 1432, 1792, 1820))
-    # *((height, 1024) for height in (768, 752, 736, 584, 576))
+    *((1024, width) for width in (1368, 1432, 1816))
+    # *((height, 1024) for height in (768, 736, 576))
+    # (888, 1184), (864, 1208), (768, 1368)
 )
 
 class ImageGenerator:
@@ -46,7 +48,12 @@ class ImageGenerator:
             requires_pooled=[False, True]
         )
         self.empty_embeds, _ = self.compel("")
-        self.negative_cache = {}
+
+        self.embedding_cache = {
+            "positive": {},
+            "negative": {},
+            "padded": {}
+        }
 
         self.callback = SDXLCFGCutoffCallback(cutoff_step_ratio=0.4)
 
@@ -61,8 +68,8 @@ class ImageGenerator:
         pipe.unet.to(memory_format=torch.channels_last)
         pipe.vae.to(memory_format=torch.channels_last)
 
-        pipe.vae.enable_slicing()
-        pipe.vae.enable_tiling()
+        # pipe.vae.enable_slicing()
+        # pipe.vae.enable_tiling()
 
         self.scheduler_config = pipe.scheduler.config
 
@@ -85,6 +92,8 @@ class ImageGenerator:
         return name
 
     def apply_loras(self, body):
+        previous_loras = self.loaded_loras.copy() # This only detects changes to the LoRA names, not changes to their weights
+
         for adapter in ADAPTER_NAMES:
             self.loaded_loras[adapter] = self._update_lora(
                 body.get(adapter), self.loaded_loras.get(adapter), adapter
@@ -97,18 +106,37 @@ class ImageGenerator:
         else:
             self.pipe.disable_lora()
 
+        if previous_loras != self.loaded_loras:
+            for cache in self.embedding_cache.values():
+                cache.clear()
+
+    def _get_embeddings(self, cache, prompt):
+        if prompt not in cache:
+            cache[prompt] = self.compel(prompt)
+
+        return cache[prompt]
+
+    def _get_padded_embeddings(self, prompt, negative_prompt):
+        key = (prompt, negative_prompt)
+
+        if key in self.embedding_cache["padded"]:
+            prompt_embeds, negative_embeds = self.embedding_cache["padded"][key]
+            pooled = self.embedding_cache["positive"][prompt][1]
+            negative_pooled = self.embedding_cache["negative"][negative_prompt][1]
+        else:
+            prompt_embeds, pooled = self._get_embeddings(self.embedding_cache["positive"], prompt)
+            negative_embeds, negative_pooled = self._get_embeddings(self.embedding_cache["negative"], negative_prompt)
+
+            prompt_embeds, negative_embeds = self.compel.pad_conditioning_tensors_to_same_length(
+                [prompt_embeds, negative_embeds],
+                precomputed_padding=self.empty_embeds # Prevent EmbeddingsProviderMulti.empty_z AttributeError
+            )
+            self.embedding_cache["padded"][key] = (prompt_embeds, negative_embeds)
+
+        return prompt_embeds, pooled, negative_embeds, negative_pooled
+
     def generate_image(self, prompt, size, steps, cfg, negative_prompt, seed):
-        prompt_embeds, pooled = self.compel(prompt)
-
-        if negative_prompt not in self.negative_cache:
-            self.negative_cache[negative_prompt] = self.compel(negative_prompt)
-
-        negative_embeds, negative_pooled = self.negative_cache[negative_prompt]
-
-        prompt_embeds, negative_embeds = self.compel.pad_conditioning_tensors_to_same_length(
-            [prompt_embeds, negative_embeds],
-            precomputed_padding=self.empty_embeds # Prevent EmbeddingsProviderMulti.empty_z AttributeError
-        )
+        prompt_embeds, pooled, negative_embeds, negative_pooled = self._get_padded_embeddings(prompt, negative_prompt)
 
         image = BytesIO()
 
