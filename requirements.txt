@@ -1,5 +1,7 @@
-torch
-triton-windows==3.1.1.post19
+# nvidia-smi
+# pip install --force-reinstall torch torchvision --index-url https://download.pytorch.org/whl/cu132
+
+triton-windows
 diffusers
 transformers
 accelerate
