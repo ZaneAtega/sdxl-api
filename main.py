@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
 from io import BytesIO
+import os
 import random
 
 import torch
@@ -14,12 +15,12 @@ from fastapi.responses import Response
 from prompts import PROMPT_PREFIX, NEGATIVE_PROMPT
 from schedulers import SCHEDULERS
 
-MODEL = "models/" + (
-    "waiIllustriousSDXL_v170",
-    "ChenkinNoob-XL-V0.5",
-    "Illustrious-XL-v2.0",
-    "NoobAI-XL-v1.1"
-)[0] + ".safetensors"
+MODELS = (
+    ("models/waiIllustriousSDXL_v170.safetensors", "https://huggingface.co/LyliaEngine/waiIllustriousSDXL_v170/blob/main/waiIllustriousSDXL_v170.safetensors"),
+    ("models/ChenkinNoob-XL-V0.5.safetensors", "https://huggingface.co/ChenkinLab/ChenkinNoob-XL-V0.5/blob/main/ChenkinNoob-XL-V0.5.safetensors"),
+    ("models/Illustrious-XL-v2.0.safetensors", "https://huggingface.co/OnomaAIResearch/Illustrious-XL-v2.0/blob/main/Illustrious-XL-v2.0.safetensors"),
+    ("models/NoobAI-XL-v1.1.safetensors", "https://huggingface.co/Laxhar/noobai-XL-1.1/blob/main/noobai-XL-1.1.safetensors"),
+)[0]
 
 ADAPTER_NAMES = ("style", "secondary_style", "character")
 
@@ -59,7 +60,7 @@ class ImageGenerator:
 
     def _load_pipeline(self):
         pipe = StableDiffusionXLPipeline.from_single_file(
-            MODEL,
+            MODELS[0] if os.path.isfile(MODELS[0]) else MODELS[1],
             torch_dtype=torch.float16
         ).to("cuda")
 
