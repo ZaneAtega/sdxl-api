@@ -68,8 +68,9 @@ class ImageGenerator:
         pipe.unet.to(memory_format=torch.channels_last)
         pipe.vae.to(memory_format=torch.channels_last)
 
-        # pipe.vae.enable_slicing()
-        # pipe.vae.enable_tiling()
+        if torch.cuda.get_device_properties(0).total_memory < 16 * 1024**3:
+            pipe.vae.enable_slicing()
+            pipe.vae.enable_tiling()
 
         self.scheduler_config = pipe.scheduler.config
 
@@ -102,7 +103,12 @@ class ImageGenerator:
         adapters = [adapter for adapter in ADAPTER_NAMES if body.get(adapter)]
 
         if adapters:
-            self.pipe.set_adapters(adapters, adapter_weights=[body.get(f"{adapter}_weight", 1.0) for adapter in adapters])
+            multiple_styles = "style" in adapters and "secondary_style" in adapters
+
+            self.pipe.set_adapters(adapters, adapter_weights=[
+                body.get(f"{adapter}_weight", 0.8 if multiple_styles and adapter in ("style", "secondary_style") else 1.0)
+                for adapter in adapters
+            ])
         else:
             self.pipe.disable_lora()
 
