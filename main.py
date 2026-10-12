@@ -21,7 +21,7 @@ MODEL = "models/" + (
     "NoobAI-XL-v1.1"
 )[0] + ".safetensors"
 
-ADAPTER_NAMES = ("style", "character")
+ADAPTER_NAMES = ("style", "secondary_style", "character")
 
 SIZES = (
     (1272, 1272), # 1024 1240
@@ -188,4 +188,4 @@ async def generate(body: dict):
     ), media_type="image/png")
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=7869)
+    uvicorn.run(app, host="0.0.0.0", port=7869)
