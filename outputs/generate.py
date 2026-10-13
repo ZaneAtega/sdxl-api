@@ -1,12 +1,9 @@
 import json
 import os
 import random
-import sys
 from datetime import datetime
 
 import requests
-
-URL = sys.argv[1] if len(sys.argv) > 1 else "http://127.0.0.1:7869/"
 
 class Pose:
     def __init__(self, poses):
@@ -46,7 +43,7 @@ def build_prompt(pose):
 
 def generate():
     try:
-        response = requests.post(URL, json={"prompt": build_prompt(pose.next()), **payload})
+        response = requests.post("http://127.0.0.1:7869/", json={"prompt": build_prompt(pose.next()), **payload})
     except requests.Timeout:
         return
 
