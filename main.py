@@ -39,7 +39,9 @@ SIZES = (
 class ImageGenerator:
     def __init__(self):
         self.pipe = self._load_pipeline()
+
         self.loaded_loras = {}
+        self.active_loras = {}
 
         self.compel = Compel(
             tokenizer=[self.pipe.tokenizer, self.pipe.tokenizer_2],
@@ -94,26 +96,27 @@ class ImageGenerator:
         return name
 
     def apply_loras(self, body):
-        previous_loras = self.loaded_loras.copy() # This only detects changes to the LoRA names, not changes to their weights
+        previous_loras = self.active_loras.copy()
 
         for adapter in ADAPTER_NAMES:
             self.loaded_loras[adapter] = self._update_lora(
                 body.get(adapter), self.loaded_loras.get(adapter), adapter
             )
 
-        adapters = [adapter for adapter in ADAPTER_NAMES if body.get(adapter)]
-
-        if adapters:
+        if adapters := [adapter for adapter in ADAPTER_NAMES if body.get(adapter)]:
             multiple_styles = "style" in adapters and "secondary_style" in adapters
 
-            self.pipe.set_adapters(adapters, adapter_weights=[
-                body.get(f"{adapter}_weight", 0.8 if multiple_styles and adapter in ("style", "secondary_style") else 1.0)
+            self.active_loras = {
+                adapter: body.get(f"{adapter}_weight", 0.8 if multiple_styles and adapter in ("style", "secondary_style") else 1.0)
                 for adapter in adapters
-            ])
+            }
+
+            self.pipe.set_adapters(adapters, adapter_weights=[self.active_loras[adapter] for adapter in adapters])
         else:
             self.pipe.disable_lora()
+            self.active_loras = {}
 
-        if previous_loras != self.loaded_loras:
+        if previous_loras != self.active_loras:
             for cache in self.embedding_cache.values():
                 cache.clear()
 

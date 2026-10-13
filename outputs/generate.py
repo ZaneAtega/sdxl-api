@@ -36,7 +36,7 @@ def build_prompt():
         # camera angle
         # composition: how the subject and other visual elements are arranged within the image
 
-        random.choice(library["poses"]), # pose, arm and leg positions, hand placement, gestures, character actions, environmental interactions
+        random.choice(library["poses"]), # pose, arm and leg positions, hand placement, gestures, actions, object interactions
         random.choice(library["expressions"]), # facial expression, emotion
     ))
 
