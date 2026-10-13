@@ -20,7 +20,7 @@ class Pose:
 
     def _expand_tags(self, pose):
         if "1boy" not in pose: # negative_prompt: 1boy
-            pose += ", solo"
+            pose += ", solo, looking at viewer"
 
         for tag, more in self._replacements:
             pose = pose.replace(tag, more)
@@ -58,11 +58,14 @@ def build_prompt(pose):
 
 def generate():
     try:
-        response = requests.post("http://127.0.0.1:7869/", json={"prompt": build_prompt(pose.next()), **payload})
+        response = requests.post("http://127.0.0.1:7869/", json={
+            "prompt": build_prompt(pose.next() if isinstance(pose, Pose) else pose), **payload
+        })
     except requests.Timeout:
         return
 
-    pose.increment()
+    if isinstance(pose, Pose):
+        pose.increment()
 
     with open(f"{path}/{int(datetime.now().timestamp())}.png", "wb") as f:
         f.write(response.content)
@@ -77,7 +80,7 @@ prompt = payload.pop("prompt")
 prompt["character"] = f"{prompt['character']}, {library['characters'][prompt['character']]}"
 prompt["outfit"] = prompt.get("outfit") or random.choice(library["outfits"])
 scene = random.choice(library["scenes"])
-pose = Pose(library["poses"])
+pose = prompt.get("pose") or Pose(library["poses"])
 
 path = datetime.now().strftime("%Y-%m-%d %H")
 os.makedirs(path, exist_ok=True)

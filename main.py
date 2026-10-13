@@ -54,7 +54,7 @@ class ImageGenerator:
     def _load_pipeline(self):
         pipe = StableDiffusionXLPipeline.from_single_file(
             MODELS[0] if os.path.isfile(MODELS[0]) else MODELS[1],
-            torch_dtype=torch.bfloat16
+            torch_dtype=torch.float16
         ).to("cuda")
 
         pipe.fuse_qkv_projections()
