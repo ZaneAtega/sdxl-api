@@ -4,15 +4,15 @@ from PIL import Image
 TEXT_STROKE = 12
 DESCENDER = 19
 
-folder = max((p for p in Path.cwd().iterdir() if p.is_dir()), key=lambda p: p.stat().st_mtime)
+FOLDER = max((p for p in Path.cwd().iterdir() if p.is_dir()), key=lambda p: p.stat().st_mtime)
 
-output = folder / "Watermarked"
+output = FOLDER / "Watermarked"
 output.mkdir(exist_ok=True)
 
 watermark = Image.open("watermark.png").convert("RGBA")
 # watermark.putalpha(watermark.getchannel("A").point(lambda a: a // 2))
 
-for path in sorted(folder.glob("*.png"))[:4]:
+for path in sorted(FOLDER.glob("*.png"))[:4]:
     with Image.open(path) as img:
         img = img.convert("RGBA")
 

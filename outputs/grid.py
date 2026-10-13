@@ -5,9 +5,9 @@ import random
 portrait = None
 imgs = []
 
-folder = max((p for p in Path.cwd().iterdir() if p.is_dir()), key=lambda p: p.stat().st_mtime)
+FOLDER = max((p for p in Path.cwd().iterdir() if p.is_dir()), key=lambda p: p.stat().st_mtime)
 
-for path in sorted(folder.glob("*.png"), key=lambda _: random.random()):
+for path in sorted(FOLDER.glob("*.png"), key=lambda _: random.random()):
     if portrait and len(imgs) >= 2:
         break
 
@@ -41,4 +41,4 @@ for i, path in enumerate(imgs):
         (dim, i * dim)
     )
 
-grid.convert("RGB").save(Path(__file__).with_name(f"{folder.name}.png"))
+grid.convert("RGB").save(Path(__file__).with_name(f"{FOLDER.name}.png"))

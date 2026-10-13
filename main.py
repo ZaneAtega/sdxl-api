@@ -12,7 +12,7 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.responses import Response
 
-from prompts import PROMPT_PREFIX, NEGATIVE_PROMPT
+from prompts import PROMPT_PREFIX, build_negative_prompt
 from schedulers import SCHEDULERS
 
 MODELS = (
@@ -22,19 +22,9 @@ MODELS = (
     ("models/NoobAI-XL-v1.1.safetensors", "https://huggingface.co/Laxhar/noobai-XL-1.1/blob/main/noobai-XL-1.1.safetensors"),
 )[0]
 
-ADAPTER_NAMES = ("style", "secondary_style", "character")
+ADAPTER_NAMES = ("character", "style", "secondary_style", "concept")
 
-SIZES = (
-    (1272, 1272), # 1024 1240
-
-    *((height, 1024) for height in (1128, 1368, 1496, 1816, 2208)),
-    # *((1024, width) for width in (928, 768, 704, 576, 472)),
-    # (832, 1024), (896, 1024), (912, 1024), (1024, 952), (1024, 832),
-
-    *((1024, width) for width in (1368, 1432, 1816))
-    # *((height, 1024) for height in (768, 736, 576))
-    # (888, 1184), (864, 1208), (768, 1368)
-)
+SIZES = ((1280, 1280), (1024, 1408), (1408, 1024), (1024, 1792))
 
 class ImageGenerator:
     def __init__(self):
@@ -193,7 +183,7 @@ async def generate(body: dict):
         size=tuple(body["size"]) if body.get("size") else random.choice(SIZES),
         steps=body.get("steps", 28), # 12 20 28
         cfg=body.get("cfg", 5.0), # 4–7
-        negative_prompt=body.get("negative_prompt", NEGATIVE_PROMPT),
+        negative_prompt=body.get("negative_prompt") or build_negative_prompt(body['prompt']),
         seed=body.get("seed")
     ), media_type="image/png")
 

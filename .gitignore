@@ -2,4 +2,7 @@ models
 prompts.py
 outputs/*
 !outputs/*.py
+datasets/*
+!datasets/aggregate.py
+!datasets/exclude.txt
 __pycache__
