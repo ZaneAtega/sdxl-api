@@ -12,7 +12,7 @@ EXCLUDE = {tag.strip() for tag in (ROOT / "exclude.txt").read_text().split(",")}
 
 EXPRESSIONS = {
     "ahegao", "blush",
-    "closed mouth", "open mouth", "parted lips", "smile", "saliva",
+    "closed mouth", "open mouth", "parted lips", "saliva", "smile",
     "closed eyes", "half-closed eyes", "rolling eyes"
 }
 
@@ -44,15 +44,7 @@ for folder in ROOT.iterdir():
             if value >= 0.35
         )
 
-    if not tags:
-        continue
-
-    tags -= EXCLUDE
-
-    output.append(
-        f"{folder.name}\n\n"
-        f"{', '.join(sorted(tags - EXPRESSIONS))}\n\n"
-        f"{', '.join(sorted(tags & EXPRESSIONS))}"
-    )
+    if tags := tags - EXCLUDE - EXPRESSIONS:
+        output.append(f"{folder.name}: {', '.join(sorted(tags))}\n\n")
 
 (ROOT / f"{ROOT.name}.txt").write_text("\n\n".join(output), encoding="utf-8")

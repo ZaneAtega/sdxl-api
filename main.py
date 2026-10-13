@@ -24,7 +24,8 @@ MODELS = (
 
 ADAPTER_NAMES = ("character", "style", "secondary_style", "concept")
 
-SIZES = ((1280, 1280), (1024, 1408), (1408, 1024), (1024, 1792))
+# SDXL Base Ratios: https://github.com/Stability-AI/generative-models/blob/main/scripts/demo/sampling.py
+SIZES = ((1536, 1536), (1824, 1248), (1248, 1824), (1152, 2048))
 
 class ImageGenerator:
     def __init__(self):
@@ -53,7 +54,7 @@ class ImageGenerator:
     def _load_pipeline(self):
         pipe = StableDiffusionXLPipeline.from_single_file(
             MODELS[0] if os.path.isfile(MODELS[0]) else MODELS[1],
-            torch_dtype=torch.float16
+            torch_dtype=torch.bfloat16
         ).to("cuda")
 
         pipe.fuse_qkv_projections()

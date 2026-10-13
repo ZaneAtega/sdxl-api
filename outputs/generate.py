@@ -12,13 +12,28 @@ class Pose:
         self._limit = 0
         self._pose = None
 
+        self._replacements = (
+            ("1boy, ", "1boy, faceless male, hetero, veiny penis, "),
+            (", anal, ", ", anal, sex, "),
+            ("vaginal", "sex, vaginal")
+        )
+
+    def _expand_tags(self, pose):
+        if "1boy" not in pose: # negative_prompt: 1boy
+            pose += ", solo"
+
+        for tag, more in self._replacements:
+            pose = pose.replace(tag, more)
+
+        return pose
+
     def next(self):
         if self._count < self._limit:
             return self._pose
 
         self._count = 0
         self._limit = random.randint(5, 10)
-        self._pose = random.choice(self._poses)
+        self._pose = self._expand_tags(random.choice(self._poses))
 
         return self._pose
 
@@ -37,8 +52,8 @@ def build_prompt(pose):
         # camera angle
         # composition: how the subject and other visual elements are arranged within the image
 
-        f"{pose}, {'faceless male' if '1boy' in pose else 'solo'}", # pose, arm and leg positions, hand placement, gestures, actions, object interactions
-        random.choice(library["expressions"]), # facial expression, emotion
+        pose, # pose, arm and leg positions, hand placement, gestures, actions, object interactions
+        "blush, smile", # facial expression, emotion
     ))
 
 def generate():
