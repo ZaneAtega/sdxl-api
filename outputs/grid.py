@@ -22,8 +22,7 @@ for path in sorted(folder.glob("*.png"), key=lambda _: random.random()):
 with Image.open(portrait) as img:
     portrait = img.convert("RGBA")
 
-w, h = portrait.size
-
+w, _ = portrait.size
 grid = Image.new("RGBA", (w, w))
 
 grid.alpha_composite(
@@ -31,11 +30,11 @@ grid.alpha_composite(
     (0, 0)
 )
 
+dim = grid.width // 2
+
 for i, path in enumerate(imgs):
     with Image.open(path) as img:
         img = img.convert("RGBA")
-
-    dim = grid.width // 2
 
     grid.alpha_composite(
         ImageOps.fit(img, (dim, dim), method=Image.Resampling.LANCZOS),
