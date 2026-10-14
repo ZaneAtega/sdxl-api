@@ -1,12 +1,13 @@
 import json
 import os
 import random
+import sys
 from datetime import datetime
 
 import requests
 
 class Pose:
-    def __init__(self, poses, outfit="", clothed_poses=None):
+    def __init__(self, poses, outfit="", clothed_poses=(), min=5, max=10):
         self._original_poses = poses.copy()
 
         if "nude" not in outfit:
@@ -15,9 +16,12 @@ class Pose:
         self._poses = self._original_poses.copy()
         random.shuffle(self._poses)
 
-        self._count = 0
-        self._limit = 0
         self._pose = None
+
+        self._min = min
+        self._max = max
+        self._limit = 0
+        self._count = 0
 
         self._replacements = (
             ("1boy, ", "1boy, faceless male, hetero, veiny penis, "),
@@ -56,7 +60,7 @@ class Pose:
             return self._pose
 
         self._count = 0
-        self._limit = random.randint(5, 10)
+        self._limit = random.randint(self._min, self._max)
 
         if not self._poses:
             self._poses = self._original_poses.copy()
@@ -71,10 +75,16 @@ class Pose:
     def increment(self):
         self._count += 1
 
+def build_outfit(outfit, pose):
+    if "bra" in outfit and ("pussy" in pose or "1boy" in pose):
+        outfit += ", clothing aside, panties aside, breasts out, bra pull, clothes pull, strap slip, strap pull"
+
+    return outfit
+
 def build_prompt(pose):
     return ", ".join((
         prompt["character"],
-        prompt["outfit"],
+        build_outfit(prompt["outfit"], pose),
         scene, # location, background, environmental details, lighting, atmosphere
 
         random.choice(library["camera"]),
@@ -111,7 +121,7 @@ prompt = payload.pop("prompt")
 prompt["character"] = f"{prompt['character']}, {library['characters'][prompt['character']]}"
 prompt["outfit"] = prompt.get("outfit") or random.choice(library["outfits"])
 scene = random.choice(library["scenes"])
-pose = prompt.get("pose") or Pose(library["poses"], prompt["outfit"], library["clothed_poses"])
+pose = prompt.get("pose") or Pose(library["poses"], prompt["outfit"], library["clothed_poses"], *map(int, sys.argv[1:3]))
 
 path = datetime.now().strftime("%Y-%m-%d %H")
 os.makedirs(path, exist_ok=True)

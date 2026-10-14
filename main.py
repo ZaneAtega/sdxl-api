@@ -12,7 +12,7 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.responses import Response
 
-from prompts import PROMPT_PREFIX, build_negative_prompt
+from prompts import build_prompt, build_negative_prompt
 from schedulers import SCHEDULERS
 
 MODELS = (
@@ -180,7 +180,7 @@ async def generate(body: dict):
     generator.apply_loras(body)
 
     return Response(generator.generate_image(
-        prompt=f"{PROMPT_PREFIX}{body['prompt']}",
+        prompt=build_prompt(body['prompt']),
         size=tuple(body["size"]) if body.get("size") else random.choice(SIZES),
         steps=body.get("steps", 28), # 12 20 28
         cfg=body.get("cfg", 5.0), # 4–7
