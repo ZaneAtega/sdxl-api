@@ -120,7 +120,7 @@ with open("prompts.json", encoding="utf-8") as f:
 prompt = payload.pop("prompt")
 prompt["character"] = f"{prompt['character']}, {library['characters'][prompt['character']]}"
 prompt["outfit"] = prompt.get("outfit") or random.choice(library["outfits"])
-scene = random.choice(library["scenes"])
+scene = prompt.get("scene") or random.choice(library["scenes"])
 pose = prompt.get("pose") or Pose(library["poses"], prompt["outfit"], library["clothed_poses"], *map(int, sys.argv[1:3]))
 
 path = datetime.now().strftime("%Y-%m-%d %H")
