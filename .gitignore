@@ -1,7 +1,7 @@
 models
 prompts.py
-outputs/*
-!outputs/*.py
+output/*
+!output/*.py
 datasets/*
 !datasets/aggregate.py
 !datasets/exclude.txt
