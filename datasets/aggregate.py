@@ -6,7 +6,11 @@ import requests
 
 ROOT = Path(__file__).resolve().parent
 
-EXCLUDE = {tag.strip() for tag in (ROOT / "exclude.txt").read_text().split(",")} | (
+EXCLUDE = {
+    tag.strip() for tag in next(
+        p for p in (ROOT / "exclude.txt", ROOT.parent / "exclude.txt") if p.is_file()
+    ).read_text().split(",")
+} | (
     {tag.strip() for tag in sys.argv[1].split(",")} if len(sys.argv) > 1 else set()
 )
 

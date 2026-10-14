@@ -6,8 +6,15 @@ from datetime import datetime
 import requests
 
 class Pose:
-    def __init__(self, poses):
-        self._poses = poses
+    def __init__(self, poses, outfit="", clothed_poses=None):
+        self._original_poses = poses.copy()
+
+        if "nude" not in outfit:
+            self._original_poses.extend(clothed_poses)
+
+        self._poses = self._original_poses.copy()
+        random.shuffle(self._poses)
+
         self._count = 0
         self._limit = 0
         self._pose = None
@@ -22,6 +29,23 @@ class Pose:
         if "1boy" not in pose: # negative_prompt: 1boy
             pose += ", solo, looking at viewer"
 
+        if "cowgirl" in pose or "straddling" in pose:
+            pose += ", girl on top"
+
+        if any(tag in pose for tag in ("prone bone", "doggystyle", "reverse cowgirl")):
+            pose += ", sex from behind"
+
+        """
+        if "prone bone" in pose or "missionary" in pose:
+            pose += ", lying"
+
+        if "prone bone" in pose:
+            pose += ", on stomach"
+
+        if "missionary" in pose:
+            pose += ", on back"
+        """
+
         for tag, more in self._replacements:
             pose = pose.replace(tag, more)
 
@@ -33,7 +57,14 @@ class Pose:
 
         self._count = 0
         self._limit = random.randint(5, 10)
-        self._pose = self._expand_tags(random.choice(self._poses))
+
+        if not self._poses:
+            self._poses = self._original_poses.copy()
+            random.shuffle(self._poses)
+
+        pose = self._poses.pop()
+        pose = random.choice(pose) if isinstance(pose, list) else pose
+        self._pose = self._expand_tags(pose)
 
         return self._pose
 
@@ -80,7 +111,7 @@ prompt = payload.pop("prompt")
 prompt["character"] = f"{prompt['character']}, {library['characters'][prompt['character']]}"
 prompt["outfit"] = prompt.get("outfit") or random.choice(library["outfits"])
 scene = random.choice(library["scenes"])
-pose = prompt.get("pose") or Pose(library["poses"])
+pose = prompt.get("pose") or Pose(library["poses"], prompt["outfit"], library["clothed_poses"])
 
 path = datetime.now().strftime("%Y-%m-%d %H")
 os.makedirs(path, exist_ok=True)

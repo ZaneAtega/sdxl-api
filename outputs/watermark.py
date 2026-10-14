@@ -1,5 +1,10 @@
+import argparse
 from pathlib import Path
 from PIL import Image
+
+parser = argparse.ArgumentParser()
+parser.add_argument("-a", "--all", action="store_true")
+args = parser.parse_args()
 
 TEXT_STROKE = 12
 DESCENDER = 19
@@ -12,7 +17,7 @@ output.mkdir(exist_ok=True)
 watermark = Image.open("watermark.png").convert("RGBA")
 # watermark.putalpha(watermark.getchannel("A").point(lambda a: a // 2))
 
-for path in sorted(FOLDER.glob("*.png"))[:4]:
+for path in sorted(FOLDER.glob("*.png"))[:None if args.all else 4]:
     with Image.open(path) as img:
         img = img.convert("RGBA")
 
