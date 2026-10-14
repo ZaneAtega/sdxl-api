@@ -26,15 +26,19 @@ for path in sorted(FOLDER.glob("*.png"))[:None if args.all else 4]:
 
     margin = img.width / 328 * 4 # 328 * 4, 414 * 16
     margin -= TEXT_STROKE * scale
-    margin = int(margin)
+
+    margin = (
+        int(margin) if img.width < img.height else int(margin - DESCENDER * scale),
+        int(margin),
+    )
 
     img.alpha_composite(scaled_watermark,
         # (0, 0)
         # (img.width - scaled_watermark.width, 0)
         # (0, img.height - scaled_watermark.height)
         (
-            img.width - scaled_watermark.width - margin,
-            img.height - scaled_watermark.height - (margin - int(DESCENDER * scale))
+            img.width - scaled_watermark.width - margin[1],
+            img.height - scaled_watermark.height - margin[0]
         )
     )
 
