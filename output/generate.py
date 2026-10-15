@@ -95,8 +95,8 @@ def build_prompt(prompt):
     ))
 
 def generate(payload, output_dir=Path(".")):
-    prompt = payload["prompt"]
-    pose = prompt["pose"]
+    pose = payload["prompt"]["pose"]
+    prompt = payload["prompt"].copy()
     prompt["pose"] = pose.next() if isinstance(pose, Pose) else pose
 
     try:
