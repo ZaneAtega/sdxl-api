@@ -1,10 +1,10 @@
-import importlib
+from importlib import import_module
 import random
 
 try:
-    DefaultPose = importlib.import_module("__main__").Pose
+    DefaultPose = import_module("__main__").Pose
 except AttributeError:
-    DefaultPose = importlib.import_module("generate").Pose
+    DefaultPose = import_module("generate").Pose
 
 class Pose(DefaultPose):
     def __init__(self, poses, min=5, max=10, outfit="", clothed_poses=()):
@@ -57,6 +57,6 @@ class Pose(DefaultPose):
 
 def build_outfit(outfit, pose):
     if "bra" in outfit and ("pussy" in pose or "1boy" in pose):
-        outfit += ", clothing aside, panties aside, breasts out, bra pull, clothes pull, strap slip, strap pull"
+        outfit += ", bra lift, bra pull, breasts out, clothes lift, clothes pull, clothing aside, panties aside, panty pull, strap pull, strap slip"
 
     return outfit

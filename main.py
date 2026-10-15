@@ -1,6 +1,6 @@
 from contextlib import asynccontextmanager
 from io import BytesIO
-import os
+from os.path import isfile
 import random
 
 import torch
@@ -53,7 +53,7 @@ class ImageGenerator:
 
     def _load_pipeline(self):
         pipe = StableDiffusionXLPipeline.from_single_file(
-            MODELS[0] if os.path.isfile(MODELS[0]) else MODELS[1],
+            MODELS[0] if isfile(MODELS[0]) else MODELS[1],
             torch_dtype=torch.float16
         ).to("cuda")
 
