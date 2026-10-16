@@ -56,7 +56,7 @@ class Pose(DefaultPose):
         return pose
 
 def build_outfit(outfit, pose):
-    if "bra" in outfit and ("pussy" in pose or "1boy" in pose):
+    if "bra" in outfit and any(tag in pose for tag in ("pussy", "1boy", "covering")):
         outfit += ", bra lift, bra pull, breasts out, clothes lift, clothes pull, clothing aside, panties aside, panty pull, strap pull, strap slip"
 
     return outfit
