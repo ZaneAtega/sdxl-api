@@ -1,5 +1,5 @@
 models
-prompts.py
+style_prompts.py
 output/*
 !output/*.py
 !output/auto-contrast.js

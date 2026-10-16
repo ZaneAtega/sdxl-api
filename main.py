@@ -4,7 +4,7 @@ from os.path import isfile
 import random
 
 import torch
-from compel import Compel, ReturnedEmbeddingsType
+from compel import CompelForSDXL
 from diffusers import StableDiffusionXLPipeline
 from diffusers.callbacks import SDXLCFGCutoffCallback
 
@@ -12,7 +12,7 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.responses import Response
 
-from prompts import build_prompt, build_negative_prompt
+from style_prompts import build_style_prompt, build_negative_style_prompt
 from schedulers import SCHEDULERS
 
 MODELS = (
@@ -34,27 +34,16 @@ class ImageGenerator:
         self.loaded_loras = {}
         self.active_loras = {}
 
-        self.compel = Compel(
-            tokenizer=[self.pipe.tokenizer, self.pipe.tokenizer_2],
-            text_encoder=[self.pipe.text_encoder, self.pipe.text_encoder_2],
-            truncate_long_prompts=False,
-            returned_embeddings_type=ReturnedEmbeddingsType.PENULTIMATE_HIDDEN_STATES_NON_NORMALIZED,
-            requires_pooled=[False, True]
-        )
-        self.empty_embeds, _ = self.compel("")
-
-        self.embedding_cache = {
-            "positive": {},
-            "negative": {},
-            "padded": {}
-        }
+        self.compel = CompelForSDXL(self.pipe)
+        self.conditioning_cache = {}
 
         self.callback = SDXLCFGCutoffCallback(cutoff_step_ratio=0.4)
 
     def _load_pipeline(self):
         pipe = StableDiffusionXLPipeline.from_single_file(
             MODELS[0] if isfile(MODELS[0]) else MODELS[1],
-            torch_dtype=torch.float16
+            torch_dtype=torch.float16,
+            use_safetensors=True
         ).to("cuda")
 
         pipe.fuse_qkv_projections()
@@ -108,38 +97,20 @@ class ImageGenerator:
             self.active_loras = {}
 
         if previous_loras != self.active_loras:
-            for cache in self.embedding_cache.values():
-                cache.clear()
+            self.conditioning_cache.clear()
 
-    def _get_embeddings(self, cache, prompt):
-        if prompt not in cache:
-            cache[prompt] = self.compel(prompt)
+    def _get_conditioning(self, prompts):
+        key = tuple(prompts.values())
 
-        return cache[prompt]
+        if key not in self.conditioning_cache:
+            self.conditioning_cache[key] = self.compel(**prompts)
 
-    def _get_padded_embeddings(self, prompt, negative_prompt):
-        key = (prompt, negative_prompt)
+        return self.conditioning_cache[key]
 
-        if key in self.embedding_cache["padded"]:
-            prompt_embeds, negative_embeds = self.embedding_cache["padded"][key]
-            pooled = self.embedding_cache["positive"][prompt][1]
-            negative_pooled = self.embedding_cache["negative"][negative_prompt][1]
-        else:
-            prompt_embeds, pooled = self._get_embeddings(self.embedding_cache["positive"], prompt)
-            negative_embeds, negative_pooled = self._get_embeddings(self.embedding_cache["negative"], negative_prompt)
-
-            prompt_embeds, negative_embeds = self.compel.pad_conditioning_tensors_to_same_length(
-                [prompt_embeds, negative_embeds],
-                precomputed_padding=self.empty_embeds # Prevent EmbeddingsProviderMulti.empty_z AttributeError
-            )
-            self.embedding_cache["padded"][key] = (prompt_embeds, negative_embeds)
-
-        return prompt_embeds, pooled, negative_embeds, negative_pooled
-
-    def generate_image(self, prompt, size, steps, cfg, negative_prompt, seed):
-        prompt_embeds, pooled, negative_embeds, negative_pooled = self._get_padded_embeddings(prompt, negative_prompt)
-
+    def generate_image(self, prompts, size, steps, cfg, seed):
         image = BytesIO()
+
+        conditioning = self._get_conditioning(prompts)
 
         self.pipe(
             height=size[0],
@@ -150,10 +121,10 @@ class ImageGenerator:
 
             num_images_per_prompt=1,
 
-            prompt_embeds=prompt_embeds,
-            pooled_prompt_embeds=pooled,
-            negative_prompt_embeds=negative_embeds,
-            negative_pooled_prompt_embeds=negative_pooled,
+            prompt_embeds=conditioning.embeds,
+            pooled_prompt_embeds=conditioning.pooled_embeds,
+            negative_prompt_embeds=conditioning.negative_embeds,
+            negative_pooled_prompt_embeds=conditioning.negative_pooled_embeds,
 
             generator=torch.Generator("cuda").manual_seed(seed) if seed is not None else None,
 
@@ -175,16 +146,36 @@ app = FastAPI(lifespan=lifespan)
 @app.post("/")
 async def generate(body: dict):
     generator = app.state.generator
-
     generator.set_scheduler(body.get("scheduler", "Euler a"))
     generator.apply_loras(body)
 
+    prompt = body["prompt"]
+    style_prompt = build_style_prompt(prompt)
+    size = tuple(body["size"]) if body.get("size") else random.choice(SIZES)
+    negative_style_prompt = build_negative_style_prompt(prompt, size)
+
+    """
+    prompts = {
+        "main_prompt": prompt,
+        "style_prompt": style_prompt,
+        "negative_prompt": body["negative_prompt"],
+        "negative_style_prompt": negative_style_prompt
+    } if body.get("negative_prompt") else {
+        "main_prompt": f"{style_prompt}, {prompt}",
+        "negative_prompt": negative_style_prompt
+    }
+    """
+
+    prompts = {
+        "main_prompt": f"{style_prompt}, {prompt}",
+        "negative_prompt": negative_style_prompt + (f", {body['negative_prompt']}" if body.get("negative_prompt") else "")
+    }
+
     return Response(generator.generate_image(
-        prompt=build_prompt(body['prompt']),
-        size=tuple(body["size"]) if body.get("size") else random.choice(SIZES),
+        prompts,
+        size=size,
         steps=body.get("steps", 28), # 12 20 28
         cfg=body.get("cfg", 5.0), # 4–7
-        negative_prompt=body.get("negative_prompt") or build_negative_prompt(body['prompt']),
         seed=body.get("seed")
     ), media_type="image/png")
 

@@ -51,8 +51,11 @@ class Pose:
 def build_outfit(outfit, pose):
     return outfit
 
+def build_negative_prompt(prompt):
+    return ""
+
 if HENTAI:
-    from hentai_prompts import build_outfit, Pose
+    from hentai_prompts import *
 
 def load_payloads(file_paths, pose_limits=(5, 10)):
     payloads = {}
@@ -100,7 +103,11 @@ def generate(payload, output_dir=Path(".")):
     prompt["pose"] = pose.next() if isinstance(pose, Pose) else pose
 
     try:
-        response = requests.post("http://127.0.0.1:7869/", json={**payload, "prompt": build_prompt(prompt)})
+        response = requests.post("http://127.0.0.1:7869/", json={
+            **payload,
+            "prompt": build_prompt(prompt),
+            "negative_prompt": build_negative_prompt(prompt)
+        })
     except requests.Timeout:
         return
 

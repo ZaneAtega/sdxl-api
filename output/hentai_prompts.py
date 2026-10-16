@@ -30,25 +30,13 @@ class Pose(DefaultPose):
         )
 
     def _expand_tags(self, pose):
-        if "1boy" not in pose: # negative_prompt: 1boy
-            pose += ", solo, looking at viewer"
+        pose = f"1girl, {pose}, {'solo focus' if '1boy' in pose else 'solo, looking at viewer'}"
 
         if "cowgirl" in pose or "straddling" in pose:
             pose += ", girl on top"
 
         if any(tag in pose for tag in ("prone bone", "doggystyle", "reverse cowgirl")):
             pose += ", sex from behind"
-
-        """
-        if "prone bone" in pose or "missionary" in pose:
-            pose += ", lying"
-
-        if "prone bone" in pose:
-            pose += ", on stomach"
-
-        if "missionary" in pose:
-            pose += ", on back"
-        """
 
         for tag, more in self._replacements:
             pose = pose.replace(tag, more)
@@ -60,3 +48,19 @@ def build_outfit(outfit, pose):
         outfit += ", bra lift, bra pull, breasts out, clothes lift, clothes pull, clothing aside, panties aside, panty pull, strap pull, strap slip"
 
     return outfit
+
+def build_negative_prompt(prompt):
+    negative_tags = []
+
+    if "1boy" in prompt:
+        negative_tags.append("2boys")
+    else:
+        negative_tags.append("1boy++++")
+
+    if "sex" in prompt:
+        negative_tags.append("double penetration")
+
+    if "indoors" in prompt:
+        negative_tags.append("looking through window, painting (object), picture frame")
+
+    return ", ".join(negative_tags)
