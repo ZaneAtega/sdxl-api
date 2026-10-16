@@ -2,5 +2,6 @@ models
 prompts.py
 output/*
 !output/*.py
+!output/auto-contrast.js
 datasets/*/
 __pycache__
