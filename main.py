@@ -22,8 +22,6 @@ MODELS = (
     ("models/NoobAI-XL-v1.1.safetensors", "https://huggingface.co/Laxhar/noobai-XL-1.1/blob/main/noobai-XL-1.1.safetensors"),
 )[0]
 
-ADAPTER_NAMES = ("character", "style", "secondary_style", "negative_style", "concept")
-
 # SDXL Base Ratios: https://github.com/Stability-AI/generative-models/blob/main/scripts/demo/sampling.py
 SIZES = ((1536, 1536), (1824, 1248), (1248, 1824), (1152, 2048))
 
@@ -31,6 +29,7 @@ class ImageGenerator:
     def __init__(self):
         self.pipe = self._load_pipeline()
 
+        self.adapter_names = ["character", "style", "secondary_style", "negative_style", "concept"]
         self.loaded_loras = {}
         self.active_loras = {}
 
@@ -76,14 +75,16 @@ class ImageGenerator:
         return name
 
     def apply_loras(self, body):
+        self.adapter_names.extend(adapter for adapter in body.get("extra_adapters", ()) if adapter not in self.adapter_names)
+
         previous_loras = self.active_loras.copy()
 
-        for adapter in ADAPTER_NAMES:
+        for adapter in self.adapter_names:
             self.loaded_loras[adapter] = self._update_lora(
                 body.get(adapter), self.loaded_loras.get(adapter), adapter
             )
 
-        if adapters := [adapter for adapter in ADAPTER_NAMES if body.get(adapter)]:
+        if adapters := [adapter for adapter in self.adapter_names if body.get(adapter)]:
             self.active_loras = {}
             multiple_styles = "style" in adapters and "secondary_style" in adapters
 
@@ -114,10 +115,10 @@ class ImageGenerator:
 
         return self.conditioning_cache[key]
 
-    def generate_image(self, prompts, size, steps, cfg, seed):
-        image = BytesIO()
-
+    def generate_image(self, prompts, size, steps, cfg, seed=None):
         conditioning = self._get_conditioning(prompts)
+
+        image = BytesIO()
 
         self.pipe(
             height=size[0],

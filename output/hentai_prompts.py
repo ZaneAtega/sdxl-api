@@ -44,8 +44,11 @@ class Pose(DefaultPose):
         return pose
 
 def build_outfit(outfit, pose):
-    if "bra" in outfit and any(tag in pose for tag in ("pussy", "1boy", "covering")):
-        outfit += ", bra lift, bra pull, breasts out, clothes lift, clothes pull, clothing aside, panties aside, panty pull, strap pull, strap slip"
+    if "bra" in outfit:
+        if any(tag in pose for tag in ("pussy", "1boy", "covering")):
+            outfit += ", bra lift, bra pull, breasts out, clothes lift, clothes pull, clothing aside, panties aside, panty pull, strap pull, strap slip"
+        elif random.random() < 0.5:
+            outfit += ", covered nipples"             
 
     return outfit
 
