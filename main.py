@@ -22,7 +22,7 @@ MODELS = (
     ("models/NoobAI-XL-v1.1.safetensors", "https://huggingface.co/Laxhar/noobai-XL-1.1/blob/main/noobai-XL-1.1.safetensors"),
 )[0]
 
-ADAPTER_NAMES = ("character", "style", "secondary_style", "concept")
+ADAPTER_NAMES = ("character", "style", "secondary_style", "negative_style", "concept")
 
 # SDXL Base Ratios: https://github.com/Stability-AI/generative-models/blob/main/scripts/demo/sampling.py
 SIZES = ((1536, 1536), (1824, 1248), (1248, 1824), (1152, 2048))
@@ -84,12 +84,19 @@ class ImageGenerator:
             )
 
         if adapters := [adapter for adapter in ADAPTER_NAMES if body.get(adapter)]:
+            self.active_loras = {}
             multiple_styles = "style" in adapters and "secondary_style" in adapters
 
-            self.active_loras = {
-                adapter: body.get(f"{adapter}_weight", 0.8 if multiple_styles and adapter in ("style", "secondary_style") else 1.0)
-                for adapter in adapters
-            }
+            for adapter in adapters:
+                if weight := body.get(f"{adapter}_weight"):
+                    self.active_loras[adapter] = weight
+                    continue
+
+                self.active_loras[adapter] = (
+                    -1.0 if adapter == "negative_style" else
+                    0.8 if multiple_styles and adapter in ("style", "secondary_style") else
+                    1.0
+                )
 
             self.pipe.set_adapters(adapters, adapter_weights=[self.active_loras[adapter] for adapter in adapters])
         else:
@@ -150,9 +157,9 @@ async def generate(body: dict):
     generator.apply_loras(body)
 
     prompt = body["prompt"]
-    style_prompt = build_style_prompt(prompt)
+    style_prompt = body.get("style_prompt") or build_style_prompt(prompt)
     size = tuple(body["size"]) if body.get("size") else random.choice(SIZES)
-    negative_style_prompt = build_negative_style_prompt(prompt, size)
+    negative_style_prompt = body.get("negative_style_prompt") or build_negative_style_prompt(prompt, size)
 
     """
     prompts = {
