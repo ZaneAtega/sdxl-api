@@ -17,6 +17,7 @@ class Pose:
         self._poses = self._original_poses.copy()
         random.shuffle(self._poses)
         self._pose = None
+        self._finished_poses = {""}
 
         self._min = min
         self._max = max
@@ -35,18 +36,27 @@ class Pose:
         self._count = 0
         self._limit = random.randint(self._min, self._max)
 
-        if not self._poses:
-            self._poses = self._original_poses.copy()
-            random.shuffle(self._poses)
+        pose = ""
 
-        pose = self._poses.pop()
-        pose = random.choice(pose) if isinstance(pose, list) else pose
+        while pose in self._finished_poses:
+            if not self._poses:
+                self._poses = self._original_poses.copy()
+                random.shuffle(self._poses)
+
+            pose = self._poses.pop()
+
+            while isinstance(pose, list):
+                pose = random.choice(pose)
+
         self._pose = self._expand_tags(pose)
 
         return self._pose
 
     def increment(self):
         self._count += 1
+
+def build_pose(pose, scene):
+    return pose
 
 def build_outfit(outfit, pose):
     return outfit
@@ -82,20 +92,22 @@ def complete_prompt(prompt, pose_limits=(5, 10)):
     )
 
 def build_prompt(prompt):
-    return ", ".join((
+    pose = prompt["pose"]
+
+    return ", ".join(filter(None, (
         prompt["character"],
-        build_outfit(prompt["outfit"], prompt["pose"]),
+        build_outfit(prompt["outfit"], pose),
         prompt["scene"], # location, background, environmental details, lighting, atmosphere
 
-        random.choice(LIBRARY["camera"]),
+        random.choice(LIBRARY["camera"]) if "pov" not in pose and ", from" not in pose else "",
         # shot size: how much of the subject is visible
         # camera orientation: which side of the subject the camera faces
         # camera angle
         # composition: how the subject and other visual elements are arranged within the image
 
-        prompt["pose"], # pose, arm and leg positions, hand placement, gestures, actions, object interactions
+        build_pose(pose, prompt["scene"]), # pose, arm and leg positions, hand placement, gestures, actions, object interactions
         prompt["expression"], # facial expression, emotion
-    ))
+    )))
 
 def generate(payload, output_dir=Path(".")):
     pose = payload["prompt"]["pose"]

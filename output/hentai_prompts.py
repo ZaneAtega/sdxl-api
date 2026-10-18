@@ -8,15 +8,11 @@ except AttributeError:
 
 class Pose(DefaultPose):
     def __init__(self, poses, min=5, max=10, outfit="", clothed_poses=()):
-        self._original_poses = poses.copy()
-
-        if "nude" not in outfit:
-            self._original_poses.extend(clothed_poses)
-
+        self._original_poses = poses.copy() + ([] if "nude" in outfit else clothed_poses)
         self._poses = self._original_poses.copy()
         random.shuffle(self._poses)
-
         self._pose = None
+        self._finished_poses = {""}
 
         self._min = min
         self._max = max
@@ -26,7 +22,8 @@ class Pose(DefaultPose):
         self._replacements = (
             ("1boy, ", "1boy, faceless male, hetero, veiny penis, "),
             (", anal, ", ", anal, sex, "),
-            ("vaginal", "sex, vaginal")
+            ("vaginal", "sex, vaginal"),
+            ("guided breast grab", "guided breast grab, grabbing another's breast, groping, pov, pov hands")
         )
 
     def _expand_tags(self, pose):
@@ -35,7 +32,7 @@ class Pose(DefaultPose):
         if "cowgirl" in pose or "straddling" in pose:
             pose += ", girl on top"
 
-        if any(tag in pose for tag in ("prone bone", "doggystyle", "reverse cowgirl")):
+        if any(tag in pose for tag in ("prone bone", "doggystyle", "reverse cowgirl", "full nelson")):
             pose += ", sex from behind"
 
         for tag, more in self._replacements:
@@ -43,12 +40,44 @@ class Pose(DefaultPose):
 
         return pose
 
+def build_pose(pose, scene):
+    if "bed" in scene and "prone bone" in pose and random.random() < 0.5:
+        pose += ", pillow grab, pillow hug"
+
+    return pose
+
 def build_outfit(outfit, pose):
-    if "bra" in outfit:
-        if any(tag in pose for tag in ("pussy", "1boy", "covering")):
-            outfit += ", bra lift, bra pull, breasts out, clothes lift, clothes pull, clothing aside, panties aside, panty pull, strap pull, strap slip"
-        elif random.random() < 0.5:
-            outfit += ", covered nipples"             
+    if "nude" in outfit:
+        return outfit
+    elif "underwear" in outfit:
+        outfit += ", underwear only"
+
+    if any(tag in pose for tag in ("pussy", "1boy", "covering")):
+        outfit += ", breasts out, clothes lift, clothes pull, clothing aside"
+
+        if "bra," in outfit:
+            outfit += ", bra pull, panties aside, panty pull, strap pull, strap slip"
+
+            if "sports bra" in outfit:
+                outfit += ", sports bra lift"
+            else:
+                outfit += ", bra lift"
+        elif "bikini" in outfit:
+            outfit += ", bikini pull, bikini bottom aside, bikini top aside, bikini top lift"
+        else:
+            outfit += ", no bra"
+
+            if "shirt" in outfit:
+                outfit += ", shirt lift"
+            elif "dress" in outfit:
+                outfit += ", dress lift"
+
+        if "pants" in outfit:
+            outfit += ", pants pull"
+        elif "shorts" in outfit:
+            outfit += ", shorts pull"
+    elif random.random() < 0.5:
+        outfit += f", cameltoe, {random.choice(('covered nipples', 'areola slip, nipple slip', 'one breast out'))}"
 
     return outfit
 
