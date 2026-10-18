@@ -53,17 +53,20 @@ def build_outfit(outfit, pose):
         outfit += ", underwear only"
 
     if any(tag in pose for tag in ("pussy", "1boy", "covering")):
-        outfit += ", breasts out, clothes lift, clothes pull, clothing aside"
+        outfit += ", breasts out"
 
         if "bra," in outfit:
-            outfit += ", bra pull, panties aside, panty pull, strap pull, strap slip"
-
-            if "sports bra" in outfit:
-                outfit += ", sports bra lift"
-            else:
-                outfit += ", bra lift"
+            outfit += ", " + (
+                "bra pull" if random.random() < 0.5 else
+                "sports bra lift" if "sports bra" in outfit else
+                "bra lift"
+            )
+            outfit += f", {'panties aside' if random.random() < 0.5 else 'panty pull'}"
         elif "bikini" in outfit:
-            outfit += ", bikini pull, bikini bottom aside, bikini top aside, bikini top lift"
+            outfit += ", " + (
+                "bikini pull" if random.random() < 0.5 else
+                f"bikini bottom aside, {'bikini top lift' if random.random() < 0.5 else 'bikini top aside'}"
+            )
         else:
             outfit += ", no bra"
 
@@ -77,7 +80,7 @@ def build_outfit(outfit, pose):
         elif "shorts" in outfit:
             outfit += ", shorts pull"
     elif random.random() < 0.5:
-        outfit += f", cameltoe, {random.choice(('covered nipples', 'areola slip, nipple slip', 'one breast out'))}"
+        outfit += f", cameltoe, {random.choice(('covered nipples', 'areola slip', 'one breast out'))}"
 
     return outfit
 
@@ -88,6 +91,9 @@ def build_negative_prompt(prompt):
         negative_tags.append("2boys")
     else:
         negative_tags.append("1boy++++")
+
+    if "pov" not in prompt:
+        negative_tags.append("pov hands++")
 
     if "sex" in prompt:
         negative_tags.append("double penetration")
