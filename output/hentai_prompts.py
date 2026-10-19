@@ -46,14 +46,17 @@ def build_pose(pose, scene):
 
     return pose
 
-def build_outfit(outfit, pose):
+def build_outfit(outfit, pose, camera):
     if "nude" in outfit:
-        return outfit
+        return outfit if "behind" in camera else f"{outfit}, nipples"
     elif "underwear" in outfit:
         outfit += ", underwear only"
 
     if any(tag in pose for tag in ("pussy", "1boy", "covering")):
         outfit += ", breasts out"
+
+        if "behind" not in camera:
+            outfit += ", nipples"
 
         if "bra," in outfit:
             outfit += ", " + (
@@ -80,7 +83,10 @@ def build_outfit(outfit, pose):
         elif "shorts" in outfit:
             outfit += ", shorts pull"
     elif random.random() < 0.5:
-        outfit += f", cameltoe, {random.choice(('covered nipples', 'areola slip', 'one breast out'))}"
+        outfit += ", cameltoe"
+
+        if "behind" not in camera:
+            outfit += f", {random.choice(('covered nipples', 'areola slip', 'one breast out'))}"
 
     return outfit
 

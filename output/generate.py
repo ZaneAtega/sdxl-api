@@ -58,7 +58,7 @@ class Pose:
 def build_pose(pose, scene):
     return pose
 
-def build_outfit(outfit, pose):
+def build_outfit(outfit, pose, camera):
     return outfit
 
 def build_negative_prompt(prompt):
@@ -93,13 +93,14 @@ def complete_prompt(prompt, pose_limits=(5, 10)):
 
 def build_prompt(prompt):
     pose = prompt["pose"]
+    camera = random.choice(LIBRARY["camera"]) if "pov" not in pose and ", from" not in pose else ""
 
     return ", ".join(filter(None, (
         prompt["character"],
-        build_outfit(prompt["outfit"], pose),
+        build_outfit(prompt["outfit"], pose, camera),
         prompt["scene"], # location, background, environmental details, lighting, atmosphere
 
-        random.choice(LIBRARY["camera"]) if "pov" not in pose and ", from" not in pose else "",
+        camera,
         # shot size: how much of the subject is visible
         # camera orientation: which side of the subject the camera faces
         # camera angle
