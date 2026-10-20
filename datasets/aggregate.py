@@ -40,12 +40,12 @@ EXCLUDED_TAGS = CHARACTER_TAGS | OUTFIT_TAGS | SCENE_TAGS | EXPRESSIONS | {
 
 CONDITIONAL_EXCLUSIONS = json.loads((PARENT / "hentai_conditional_exclusions.json").read_text())
 
-COLORS = ("red", "orange", "yellow", "green", "purple", "black", "grey", "white")
+COLORS = ("red", "orange", "yellow", "green", "blue", "purple", "black", "grey", "white")
 
 CLOTHING = (
     "bow", "hairband", "ribbon", "scrunchie",
     "choker", "collar",
-    "shirt", "bra", "tank top", "dress",
+    "shirt", "bra", "tank top", "dress", "bikini",
     "garter belt", "garter straps",
     "pants", "panties", "shorts", "thighhighs", "socks"
 )
@@ -78,15 +78,15 @@ for folder in ROOT.iterdir():
             if value >= 0.35
         )
 
+    for tag, associated_tags in CONDITIONAL_EXCLUSIONS.items():
+        if tag in tags or tag in CHARACTER_AND_OUTFIT_TAGS:
+            tags.difference_update(associated_tags)
+
     tags -= {
         clothing for tag in CHARACTER_AND_OUTFIT_TAGS
         for color, _, clothing in [tag.partition(" ")]
         if color in COLORS and clothing in CLOTHING
     }
-
-    for tag, associated_tags in CONDITIONAL_EXCLUSIONS.items():
-        if tag in tags or tag in CHARACTER_AND_OUTFIT_TAGS:
-            tags.difference_update(associated_tags)
 
     tags -= EXCLUDED_TAGS
 

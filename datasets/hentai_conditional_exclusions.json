@@ -21,5 +21,6 @@
     "sports bra": ["bra"],
     "o-ring bikini": ["o-ring", "o-ring bottom", "o-ring top", "bikini", "swimsuit", "bandeau", "highleg"],
     "beach": ["ocean", "sun", "towel"],
-    "strapless bikini": ["strapless"]
+    "strapless bikini": ["strapless"],
+    "bikini": ["swimsuit"]
 }
