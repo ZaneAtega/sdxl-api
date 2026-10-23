@@ -2,6 +2,7 @@ import json
 import random
 import sys
 from datetime import datetime
+from hashlib import md5
 from pathlib import Path
 
 import requests
@@ -127,7 +128,10 @@ def generate(payload, output_dir=Path(".")):
     if isinstance(pose, Pose):
         pose.increment()
 
-    with open(output_dir / f"{payload['character']} {int(datetime.now().timestamp())}.png", "wb") as f:
+    path = output_dir / payload['character'] / md5(prompt["pose"].encode()).hexdigest()[:12]
+    path.mkdir(parents=True, exist_ok=True)
+
+    with open(path / f"{int(datetime.now().timestamp())}.png", "wb") as f:
         f.write(response.content)
 
 def main():
