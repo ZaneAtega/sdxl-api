@@ -20,9 +20,10 @@ class Pose(DefaultPose):
         self._count = 0
 
         self._replacements = (
-            ("1boy, ", "1boy, faceless male, hetero, veiny penis, "),
+            ("1boy", "1boy, faceless male, hetero, veiny penis"),
             (", anal, ", ", anal, sex, "),
-            ("vaginal", "sex, vaginal"),
+            (", vaginal, ", ", vaginal, sex, "),
+            ("after vaginal", "after sex, after vaginal"),
             ("guided breast grab", "guided breast grab, grabbing another's breast, groping, pov, pov hands")
         )
 

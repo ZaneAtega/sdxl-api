@@ -17,13 +17,16 @@ PARENT = ROOT.parent
 
 LIBRARY = json.loads((PARENT.parent / "output" / "prompts.json").read_text())
 
-CHARACTER_TAGS, OUTFIT_TAGS, SCENE_TAGS = (
-    {tag.strip() for tag in (
-        LIBRARY[f"{arg}s"][getattr(args, arg)] if arg == "character" else
-        LIBRARY[f"{arg}s"][int(getattr(args, arg))]
-    ).split(", ")} if getattr(args, arg) else set()
-    for arg in ("character", "outfit", "scene")
+CHARACTER_TAGS = {args.character} | {
+    tag.strip() for tag in LIBRARY["characters"][args.character].split(", ")
+} if args.character else set()
+
+OUTFIT_TAGS, SCENE_TAGS = (
+    {tag.strip() for tag in LIBRARY[f"{arg}s"][int(getattr(args, arg))].split(", ")}
+    if getattr(args, arg) else set()
+    for arg in ("outfit", "scene")
 )
+
 CHARACTER_AND_OUTFIT_TAGS = CHARACTER_TAGS | OUTFIT_TAGS
 
 EXPRESSIONS = {
@@ -45,7 +48,7 @@ COLORS = ("red", "orange", "yellow", "green", "blue", "purple", "black", "grey",
 CLOTHING = (
     "bow", "hairband", "ribbon", "scrunchie",
     "choker", "collar",
-    "shirt", "bra", "tank top", "dress", "bikini",
+    "shirt", "bra", "tank top", "dress", "bikini", "apron",
     "garter belt", "garter straps",
     "pants", "panties", "shorts", "thighhighs", "socks"
 )
