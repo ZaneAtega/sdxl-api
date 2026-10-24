@@ -50,7 +50,7 @@ CLOTHING = (
     "choker", "collar",
     "shirt", "bra", "tank top", "dress", "bikini", "apron",
     "garter belt", "garter straps",
-    "pants", "panties", "shorts", "thighhighs", "socks"
+    "pants", "panties", "shorts", "skirt", "thighhighs", "socks"
 )
 
 EXTENSIONS = {".jpg", ".jpeg", ".png"}
