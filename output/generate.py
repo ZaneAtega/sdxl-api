@@ -80,7 +80,11 @@ def load_payloads(file_paths, pose_limits=(5, 10)):
     return payloads
 
 def complete_prompt(prompt, pose_limits=(5, 10)):
-    prompt["character"] = f"{prompt['character']}, {LIBRARY['characters'][prompt['character']]}"
+    prompt["character"] = (
+        f"{prompt['character']}, {LIBRARY['characters'][prompt['character']]}" +
+        (", deltoids, biceps, abs" if "toned" in prompt["character"] else "")
+    )
+
     prompt["outfit"] = prompt.get("outfit") or random.choice(LIBRARY["outfits"])
     prompt["scene"] = prompt.get("scene") or random.choice(LIBRARY["scenes"])
     prompt["expression"] = prompt.get("expression", "blush, smile")

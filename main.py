@@ -12,7 +12,7 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.responses import Response
 
-from style_prompts import build_style_prompt, build_negative_style_prompt
+from style_prompts import split_prompt, build_negative_style_prompt
 from schedulers import SCHEDULERS
 
 MODELS = (
@@ -94,7 +94,7 @@ class ImageGenerator:
                     continue
 
                 self.active_loras[adapter] = (
-                    -1.0 if adapter == "negative_style" else
+                    -1.0 if adapter.startswith("negative_style") else
                     0.8 if multiple_styles and adapter in ("style", "secondary_style") else
                     1.0
                 )
@@ -157,8 +157,7 @@ async def generate(body: dict):
     generator.set_scheduler(body.get("scheduler", "Euler a"))
     generator.apply_loras(body)
 
-    prompt = body["prompt"]
-    style_prompt = body.get("style_prompt") or build_style_prompt(prompt)
+    prompt, style_prompt = split_prompt(body["prompt"], body.get("style_prompt"))
     size = tuple(body["size"]) if body.get("size") else random.choice(SIZES)
     negative_style_prompt = body.get("negative_style_prompt") or build_negative_style_prompt(prompt, size)
 

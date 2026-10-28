@@ -6,7 +6,10 @@ path = Path(sys.argv[1])
 img = Image.open(path)
 w, h = img.size
 
-for i in range(4): 
+for i in range(4):
     img.crop((
-        i * w // 4, 0, (i + 1) * w // 4, h
+        i * w // 4  + (4 if i > 0 else 0),
+        0,
+        (i + 1) * w // 4 - (4 if i < 3 else 0),
+        h
     )).save(path.with_name(f"{path.stem}-{i + 1}{path.suffix}"))
