@@ -7,10 +7,11 @@ from pathlib import Path
 
 import requests
 
+DRY_RUN = "--dry" in sys.argv
 HENTAI = "--sfw" not in sys.argv
 
 with open(Path(__file__).with_name("prompts.json"), encoding="utf-8") as f:
-    LIBRARY = json.load(f)
+    LIBRARY = json.loads("".join(line.split("//")[0] for line in f))
 
 class Pose:
     def __init__(self, poses, min=5, max=10):
@@ -64,6 +65,9 @@ def build_outfit(outfit, pose, camera):
 
 def build_negative_prompt(prompt):
     return ""
+
+def build_folder_name(pose):
+    return md5(pose.encode()).hexdigest()[:12]
 
 if HENTAI:
     from hentai_prompts import *
@@ -120,29 +124,34 @@ def generate(payload, output_dir=Path(".")):
     prompt = payload["prompt"].copy()
     prompt["pose"] = pose.next() if isinstance(pose, Pose) else pose
 
-    try:
-        response = requests.post("http://127.0.0.1:7869/", json={
-            **payload,
-            "prompt": build_prompt(prompt),
-            "negative_prompt": build_negative_prompt(prompt)
-        })
-    except requests.Timeout:
-        return
+    if DRY_RUN:
+        content = b""
+    else:
+        try:
+            response = requests.post("http://127.0.0.1:7869/", json={
+                **payload,
+                "prompt": build_prompt(prompt),
+                "negative_prompt": build_negative_prompt(prompt)
+            })
+        except requests.Timeout:
+            return
+
+        content = response.content
 
     if isinstance(pose, Pose):
         pose.increment()
 
-    path = output_dir / payload['character'] / md5(prompt["pose"].encode()).hexdigest()[:12]
+    path = output_dir / payload['character'] / build_folder_name(prompt['pose'])
     path.mkdir(parents=True, exist_ok=True)
 
     with open(path / f"{int(datetime.now().timestamp())}.png", "wb") as f:
-        f.write(response.content)
+        f.write(content)
 
 def main():
     output_dir = Path(datetime.now().strftime("%Y-%m-%d %H"))
     output_dir.mkdir(exist_ok=True)
 
-    payloads = load_payloads(Path("payloads").iterdir(), tuple([int(arg) for arg in sys.argv[1:] if arg != "--sfw"]))
+    payloads = load_payloads(Path("payloads").iterdir(), tuple([int(arg) for arg in sys.argv[1:] if arg.isnumeric()]))
 
     for payload in payloads.values():
         for _ in range(payload.pop("image_count")):
