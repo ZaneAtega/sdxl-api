@@ -1,22 +1,36 @@
 #target photoshop
 
-var prioritizeSaveSpeed = false; // optimizeFileSize = true;
+var PRIORITIZE_SAVE_SPEED = false; // OPTIMIZE_FILE_SIZE = true;
+var contents = new Folder(new File($.fileName).parent).getFiles();
+var files = [];
 
-var folder = new Folder(new File($.fileName).parent);
+for (var i = 0; i < contents.length; i++) {
+    var f = contents[i];
 
-var files = folder.getFiles(function (f) {
-    return f instanceof File && /\.png$/i.test(f.name);
-});
+    if (f instanceof Folder) {
+        files = files.concat(f.getFiles(function (f) {
+            return f instanceof File && /\.png$/i.test(f.name);
+        }));
+    } else if (/\.png$/i.test(f.name)) {
+        files.push(f); 
+    }
+}
 
 for (var i = 0; i < files.length; i++) {
     var doc = open(files[i]);
-    var output = new File(folder.fsName + "/" + files[i].name.replace(/\.png$/i, "_auto_contrast.png"));
 
     var desc = new ActionDescriptor();
     desc.putBoolean(charIDToTypeID("AuCo"), true);
     executeAction(charIDToTypeID("Lvls"), desc, DialogModes.NO);
 
-    if (prioritizeSaveSpeed) {
+    var output = new File(files[i].parent + "/" + files[i].name.replace(/\.png$/i, "_auto_contrast.png"));
+
+    var orig = new Folder(files[i].parent + "/orig");
+    if (!orig.exists) orig.create();
+    files[i].copy(new File(orig + "/" + files[i].name));
+    files[i].remove();
+
+    if (PRIORITIZE_SAVE_SPEED) {
         doc.saveAs(output, new PNGSaveOptions(), true, Extension.LOWERCASE);
         doc.close(SaveOptions.DONOTSAVECHANGES);
         continue;
