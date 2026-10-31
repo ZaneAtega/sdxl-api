@@ -1,6 +1,6 @@
 import argparse
-import base64
 import json
+from base64 import b64encode
 from pathlib import Path
 
 import requests
@@ -68,7 +68,7 @@ for folder in ROOT.iterdir():
             continue
 
         with open(path, "rb") as file:
-            image = base64.b64encode(file.read()).decode("utf-8")
+            image = b64encode(file.read()).decode("utf-8")
 
         response = requests.post("http://127.0.0.1:7861/tagger/v1/interrogate", json={
             "image": image,

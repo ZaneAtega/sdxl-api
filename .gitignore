@@ -3,6 +3,7 @@ models/loras/*.safetensors
 style_prompts.py
 output/*
 !output/*.py
-!output/auto-contrast.js
+!output/YYYY-MM-DD HH/
+!output/extras/
 datasets/*/
 __pycache__

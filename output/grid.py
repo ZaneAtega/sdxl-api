@@ -1,44 +1,79 @@
-from pathlib import Path
-from PIL import Image, ImageOps
 import random
+import sys
+from base64 import b64encode
+from io import BytesIO
+from pathlib import Path
+from time import time
 
-portrait = None
-imgs = []
+import requests
+from PIL import Image, ImageOps
 
-FOLDER = max((p for p in Path.cwd().iterdir() if p.is_dir()), key=lambda p: p.stat().st_mtime)
+def select_images(folder):
+    portrait = None
+    imgs = []
 
-for path in sorted(FOLDER.glob("*.png"), key=lambda _: random.random()):
-    if portrait and len(imgs) >= 2:
-        break
+    paths = [*folder.glob("*.png"), *folder.glob("*/*.png")]
+    random.shuffle(paths)
 
-    with Image.open(path) as img:
-        w, h = img.size
+    for path in paths:
+        if portrait and len(imgs) >= 2:
+            break
 
-    if not portrait and h > w:
-        portrait = path
-    else:
-        imgs.append(path)
+        with Image.open(path) as img:
+            w, h = img.size
 
-with Image.open(portrait) as img:
-    portrait = img.convert("RGBA")
+        if not portrait and h > w:
+            portrait = path
+        elif w == h:
+            imgs.append(path)
 
-w, _ = portrait.size
-grid = Image.new("RGBA", (w, w))
+    return portrait, imgs
 
-grid.alpha_composite(
-    ImageOps.fit(portrait, (grid.width // 2, grid.height), method=Image.Resampling.LANCZOS),
-    (0, 0)
-)
+def censor(path, cell_size=None):
+    if content := requests.post("http://127.0.0.1:7870/", json={
+        "image": b64encode(path.read_bytes()).decode(),
+        "require_both_genitals": True,
+        "cell_size": cell_size
+    }).content:
+        return Image.open(BytesIO(content)).convert("RGBA")
 
-dim = grid.width // 2
+def grid(portrait, imgs, should_censor=False):
+    portrait = censor(portrait) if should_censor else Image.open(portrait).convert("RGBA")
 
-for i, path in enumerate(imgs):
-    with Image.open(path) as img:
-        img = img.convert("RGBA")
+    if not portrait:
+        return
 
-    grid.alpha_composite(
-        ImageOps.fit(img, (dim, dim), method=Image.Resampling.LANCZOS),
-        (dim, i * dim)
+    w, _ = portrait.size
+    grid = Image.new("RGBA", (w, w))
+    grid.alpha_composite(ImageOps.fit(portrait, (grid.width // 2, grid.height), method=Image.Resampling.LANCZOS), (0, 0))
+    dim = grid.width // 2
+
+    for i, path in enumerate(imgs):
+        img = Image.open(path).convert("RGBA")
+
+        if should_censor and not (img := censor(path, max(img.size) // (dim / min(img.size)) // 100)):
+            return
+
+        grid.alpha_composite(
+            ImageOps.fit(img, (dim, dim), method=Image.Resampling.LANCZOS),
+            (dim, i * dim)
+        )
+
+    grid.convert("RGB").save(Path(__file__).with_name(f"{int(time())}{'_censored' if should_censor else ''}.png"))
+    return True
+
+def main(folder, count=5):
+    for _ in range(count):
+        result = None
+
+        while not result:
+            portrait, imgs = select_images(folder)
+            result = grid(portrait, imgs, True)
+
+        grid(portrait, imgs)
+
+if __name__ == "__main__":
+    main(
+        Path(sys.argv[1]) if len(sys.argv) > 1 else max((p for p in Path.cwd().iterdir() if p.is_dir()), key=lambda p: p.stat().st_mtime),
+        next((int(arg) for arg in sys.argv[1:] if arg.isdigit()), 5)
     )
-
-grid.convert("RGB").save(Path(__file__).with_name(f"{FOLDER.name}.png"))
