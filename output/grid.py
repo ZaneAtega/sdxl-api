@@ -74,6 +74,6 @@ def main(folder, count=5):
 
 if __name__ == "__main__":
     main(
-        Path(sys.argv[1]) if len(sys.argv) > 1 else max((p for p in Path.cwd().iterdir() if p.is_dir()), key=lambda p: p.stat().st_mtime),
+        Path(sys.argv[1]) if len(sys.argv) > 1 else max((p for p in Path(".").iterdir() if p.is_dir()), key=lambda p: p.stat().st_mtime),
         next((int(arg) for arg in sys.argv[1:] if arg.isdigit()), 5)
     )

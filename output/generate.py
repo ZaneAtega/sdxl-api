@@ -151,7 +151,7 @@ def main():
     output_dir = Path(datetime.now().strftime("%Y-%m-%d %H"))
     output_dir.mkdir(exist_ok=True)
 
-    payloads = load_payloads(Path("payloads").iterdir(), tuple([int(arg) for arg in sys.argv[1:] if arg.isnumeric()]))
+    payloads = load_payloads(Path("payloads").iterdir(), tuple([int(arg) for arg in sys.argv[1:] if arg.isdigit()]))
 
     for payload in payloads.values():
         for _ in range(payload.pop("image_count")):
