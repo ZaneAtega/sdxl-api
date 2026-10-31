@@ -15,7 +15,7 @@ args = parser.parse_args()
 ROOT = Path(__file__).resolve().parent
 PARENT = ROOT.parent
 
-LIBRARY = json.loads((PARENT.parent / "output" / "prompts.json").read_text())
+LIBRARY = json.loads("".join(line.split("//")[0] for line in (PARENT.parent / "output" / "prompts.json").read_text(encoding="utf-8").splitlines()))
 
 CHARACTER_TAGS = {args.character} | {
     tag.strip() for tag in LIBRARY["characters"][args.character].split(", ")
