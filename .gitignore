@@ -1,5 +1,6 @@
 models/*.safetensors
-models/loras/*.safetensors
+models/loras/*
+!models/loras/*.py
 style_prompts.py
 output/*
 !output/*.py
