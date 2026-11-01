@@ -131,7 +131,7 @@ def generate(payload, output_dir=Path(".")):
             response = requests.post("http://127.0.0.1:7869/", json={
                 **payload,
                 "prompt": build_prompt(prompt),
-                "negative_prompt": build_negative_prompt(prompt)
+                "negative_prompt": build_negative_prompt(prompt) + (f", {payload['negative_prompt']}" if payload.get("negative_prompt") else "")
             })
         except requests.Timeout:
             return
