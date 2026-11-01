@@ -144,7 +144,7 @@ def build_negative_prompt(prompt):
         negative_tags.append("looking through window, painting (object), picture frame")
 
     if "pov" not in prompt:
-        negative_tags.append("(pov hands)++")
+        negative_tags.append("(pov hands)++++")
 
     return ", ".join(negative_tags)
 
