@@ -2,7 +2,6 @@ import sys
 from pathlib import Path
 from PIL import Image
 
-
 TEXT_STROKE = 12
 DESCENDER = 19
 
