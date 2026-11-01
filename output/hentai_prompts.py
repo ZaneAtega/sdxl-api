@@ -15,7 +15,7 @@ __all__ = [
     "build_folder_name",
 ]
 
-NO_HANDS = "hands++++, grabbing++++, (grabbing another's breast)++++, (grabbing another's ass)++++, (ass grab)++++, (hands on another's hips)++++"
+NO_HANDS = "hands+++++, grabbing+++++, (grabbing another's breast)++++, (grabbing another's ass)+++++, (ass grab)+++++, (hands on another's hips)+++++, (hand on another's waist)+++++"
 
 girl_on_top, other_pose = (500, 600) if random.random() < 0.5 else (600, 500)
 missionary, sex_from_behind = (400, other_pose) if random.random() < 0.5 else (other_pose, 400)
