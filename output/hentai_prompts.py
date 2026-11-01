@@ -17,20 +17,6 @@ __all__ = [
 
 NO_HANDS = "hands++++, grabbing++++, grabbing another's breast++++, grabbing another's ass++++, ass grab++++, hands on another's hips++++"
 
-POSE_ORDERS = {
-    "footjob": 901,
-    "after sex": 900,
-    "mating press": 801,
-    "full nelson": 800,
-    "imminent penetration": 301,
-    "presenting": 300,
-    "irrumatio": 201,
-    "fellatio": 200,
-    "guided breast grab": 102,
-    "covering": 101,
-    "undressing": 100
-}
-
 girl_on_top, other_pose = (500, 600) if random.random() < 0.5 else (600, 500)
 missionary, sex_from_behind = (400, other_pose) if random.random() < 0.5 else (other_pose, 400)
 
@@ -38,6 +24,21 @@ FLEXIBLE_POSE_ORDERS = {
     "girl on top": girl_on_top,
     "missionary": missionary,
     "sex from behind": sex_from_behind
+}
+
+pose_orders = {
+    "footjob": 901,
+    "after sex": 900,
+    "mating press": 801,
+    "full nelson": 800,
+    "imminent penetration": 301,
+    "presenting": 300,
+    "irrumatio": 202,
+    "fellatio": 201,
+    "paizuri": 200,
+    "guided breast grab": 102,
+    "covering": 101,
+    "undressing": 100
 }
 
 class Pose(DefaultPose):
@@ -148,18 +149,21 @@ def build_negative_prompt(prompt):
     return ", ".join(negative_tags)
 
 def get_order_and_main_tag(pose):
-    for tag, order in POSE_ORDERS.items():
-        if tag in pose:
-            return f"{order} {tag}"
+    for tag_or_pose, order in pose_orders.items():
+        if tag_or_pose in pose:
+            return f"{order} {tag_or_pose.split(', ')[5] if ',' in tag_or_pose else tag_or_pose}"
 
     for tag, order in FLEXIBLE_POSE_ORDERS.items():
-        if tag in pose:
-            return f"{order + random.randrange(0, 99)} {tag}"
+        if tag in pose and pose not in pose_orders:
+            pose_orders[pose] = order + random.randrange(0, 99)
 
     if "1boy" not in pose:
         return f"0 {pose.split(', ')[1]}"
 
-    return f"{random.randrange(400, 800)} {pose.split(', ')[5]}"
+    if pose not in pose_orders:
+        pose_orders[pose] = random.randrange(400, 800)
+
+    return f"{pose_orders[pose]} {pose.split(', ')[5]}"
 
 def build_folder_name(pose):
     return f"{get_order_and_main_tag(pose)} {md5(pose.encode()).hexdigest()[:12]}"
