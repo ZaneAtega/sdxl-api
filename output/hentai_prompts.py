@@ -29,7 +29,7 @@ FLEXIBLE_POSE_ORDERS = {
 pose_orders = {
     "footjob": 901,
     "after sex": 900,
-    "mating press": 801,
+    "folded, mating press": 801,
     "full nelson": 800,
     "imminent penetration": 301,
     "presenting": 300,
@@ -135,7 +135,7 @@ def build_negative_prompt(prompt):
         if not any(tag in prompt for tag in ("grab", "fellatio")):
             negative_tags.append(NO_HANDS)
     else:
-        negative_tags.append("1boy++++")
+        negative_tags.append("1boy+++++")
 
     if "sex" in prompt:
         negative_tags.append("double penetration")
@@ -144,26 +144,23 @@ def build_negative_prompt(prompt):
         negative_tags.append("looking through window, painting (object), picture frame")
 
     if "pov" not in prompt:
-        negative_tags.append("(pov hands)++++")
+        negative_tags.append("(pov hands)+++++")
 
     return ", ".join(negative_tags)
 
 def get_order_and_main_tag(pose):
+    arbitrary_tag = pose.split(', ')[5 if '1boy' in pose else 1]
+
     for tag_or_pose, order in pose_orders.items():
         if tag_or_pose in pose:
-            return f"{order} {tag_or_pose.split(', ')[5] if ',' in tag_or_pose else tag_or_pose}"
+            return f"{order} {arbitrary_tag if ',' in tag_or_pose else tag_or_pose}"
 
     for tag, order in FLEXIBLE_POSE_ORDERS.items():
         if tag in pose and pose not in pose_orders:
             pose_orders[pose] = order + random.randrange(0, 99)
+            break
 
-    if "1boy" not in pose:
-        return f"0 {pose.split(', ')[1]}"
-
-    if pose not in pose_orders:
-        pose_orders[pose] = random.randrange(400, 800)
-
-    return f"{pose_orders[pose]} {pose.split(', ')[5]}"
+    return f"{pose_orders.setdefault(pose, random.randrange(400, 800) if '1boy' in pose else random.randrange(0,10))} {arbitrary_tag}"
 
 def build_folder_name(pose):
     return f"{get_order_and_main_tag(pose)} {md5(pose.encode()).hexdigest()[:12]}"
