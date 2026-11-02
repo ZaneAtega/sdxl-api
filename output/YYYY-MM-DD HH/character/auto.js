@@ -20,10 +20,15 @@ for (var i = 0; i < files.length; i++) {
     var doc = open(files[i]);
 
     var desc = new ActionDescriptor();
+
+    // desc.putBoolean(charIDToTypeID("Auto"), true);
     desc.putBoolean(charIDToTypeID("AuCo"), true);
+    // desc.putBoolean(stringIDToTypeID("autoBlackWhite"), true);
+    // desc.putBoolean(stringIDToTypeID("autoNeutrals"), true);
+
     executeAction(charIDToTypeID("Lvls"), desc, DialogModes.NO);
 
-    var output = new File(files[i].parent + "/" + files[i].name.replace(/\.png$/i, "_auto_contrast.png"));
+    var output = new File(files[i].parent + "/" + files[i].name.replace(/\.png$/i, "_auto.png"));
 
     var orig = new Folder(files[i].parent + "/orig");
     if (!orig.exists) orig.create();
