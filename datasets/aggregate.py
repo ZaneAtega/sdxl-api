@@ -46,7 +46,7 @@ CONDITIONAL_EXCLUSIONS = json.loads((PARENT / "hentai_conditional_exclusions.jso
 COLORS = ("red", "orange", "yellow", "green", "blue", "purple", "black", "grey", "white")
 
 CLOTHING = (
-    "bow", "hairband", "ribbon", "scrunchie",
+    "bow", "hairband", "ribbon", "scrunchie", "veil",
     "choker", "collar",
     "shirt", "bra", "tank top", "dress", "bikini", "apron",
     "garter belt", "garter straps",

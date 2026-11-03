@@ -15,7 +15,15 @@ __all__ = [
     "build_folder_name",
 ]
 
-NO_HANDS = "hands+++++, grabbing+++++, (grabbing another's breast)++++, (grabbing another's ass)+++++, (ass grab)+++++, (hands on another's hips)+++++, (hand on another's waist)+++++"
+NO_HANDS = "hands+++++, " + "+++++, ".join(
+    f"({tag})" if " " in tag else tag
+    for base_tag in (
+        "clenched hand",
+        "grabbing", "grabbing another's breast", "grabbing another's ass", "ass grab",
+        "hand on another's waist", "hand on another's hips", "hand on another's leg", "hand on own leg"
+    )
+    for tag in ([base_tag, base_tag.replace("hand", "hands")] if "hand" in base_tag else [base_tag])
+) + "+++++"
 
 girl_on_top, other_pose = (500, 600) if random.random() < 0.5 else (600, 500)
 missionary, sex_from_behind = (400, other_pose) if random.random() < 0.5 else (other_pose, 400)
