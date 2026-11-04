@@ -14,7 +14,7 @@ with open(Path(__file__).with_name("prompts.json"), encoding="utf-8") as f:
     LIBRARY = json.loads("".join(line.split("//")[0] for line in f))
 
 class Pose:
-    def __init__(self, poses, min=5, max=10):
+    def __init__(self, poses, min=5, max=10, **kwargs):
         self._original_poses = poses.copy()
         self._poses = self._original_poses.copy()
         random.shuffle(self._poses)
@@ -97,7 +97,8 @@ def complete_prompt(prompt, pose_limits=(5, 10)):
         LIBRARY["poses"],
         *pose_limits,
         outfit=prompt["outfit"],
-        clothed_poses=LIBRARY["clothed_poses"]
+        clothed_poses=LIBRARY["clothed_poses"],
+        bbc="--bbc" in sys.argv
     )
 
 def build_prompt(prompt):

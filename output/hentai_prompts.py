@@ -50,7 +50,7 @@ pose_orders = {
 }
 
 class Pose(DefaultPose):
-    def __init__(self, poses, min=5, max=10, outfit="", clothed_poses=()):
+    def __init__(self, poses, min=5, max=10, outfit="", clothed_poses=(), bbc=False):
         self._original_poses = poses.copy() + ([] if "nude" in outfit else clothed_poses)
         self._poses = self._original_poses.copy()
         random.shuffle(self._poses)
@@ -63,7 +63,7 @@ class Pose(DefaultPose):
         self._count = 0
 
         self._replacements = (
-            ("1boy", "1boy, faceless male, hetero, veiny penis"),
+            ("1boy", f"1boy, faceless male, hetero, veiny penis{', dark-skinned male' if bbc else ''}"),
             (", anal, ", ", anal, sex, "),
             (", vaginal, ", ", vaginal, sex, "),
             ("after vaginal", "after sex, after vaginal"),
